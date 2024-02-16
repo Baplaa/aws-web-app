@@ -58,7 +58,7 @@ NOTES:
     - home IP address (/16) OR range (/24)
         * configurable in `./infra/terraform.tfvars` on `line 10`
     - student name and student ID
-        * configurable in `./service/roles/data_injection/main.yaml` on `line 56`
+        * configurable in `./service/roles/data_injection/tasks/main.yaml` on `line 56`
         * `name` has a character limit of `30`
         * `bcit_id` has a character limit of `10`
 
