@@ -1,0 +1,16 @@
+---
+- name: OS Package List Update
+  ansible.builtin.package:
+    name: "*"
+    state: latest
+    update_cache: true
+
+- name: OS Package Setup
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - bind9-dnsutils
+    - tcpdump
+    - nmap
+    - mysql-client

@@ -1,0 +1,86 @@
+---
+- name: Install Backend Packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - git
+    - libmysqlclient-dev
+    - pkg-config
+    - python3-dev
+    - python3-pip
+  tags:
+    - backend_packages
+
+- name: Create OS User
+  ansible.builtin.user:
+    name: app_user
+    state: present
+  tags:
+    - backend_user
+
+- name:  Create Backend Directory
+  ansible.builtin.file:
+    path: /home/app_user/backend
+    state: directory
+    owner: app_user
+  tags:
+    - backend_user
+
+- name: Set Safe Directory Exception for Git
+  command: git config --global --add safe.directory /home/app_user/backend
+  tags:
+    - backend_user
+
+- name: Git Clone Repo
+  ansible.builtin.git:
+    repo: https://github.com/timoguic/acit4640-py-mysql.git
+    dest: /home/app_user/repo
+    update: true
+    version: master
+  tags:
+    - backend_user
+
+- name: Copy Backend Files
+  ansible.builtin.shell:
+    cmd: "cp -r /home/app_user/repo/backend/* /home/app_user/backend/"
+  tags:
+    - backend_user
+
+- name: Install Python Dependencies
+  ansible.builtin.pip:
+    requirements: /home/app_user/backend/requirements.txt
+    extra_args: --break-system-packages
+  tags:
+    - backend_requirements
+
+- name: Configure backend.conf
+  ansible.builtin.replace:
+    path: /home/app_user/backend/backend.conf
+    regexp: 'MYSQL_HOST = 127.0.0.1'
+    replace: 'MYSQL_HOST = {{ rds_dns }}'
+  tags:
+    - backend_configuration
+
+- name: Create Unit File
+  ansible.builtin.template:
+    src: backend.j2
+    dest: /etc/systemd/system/backend.service
+  notify:
+    - Daemon Reload
+  tags:
+    - backend_service
+
+- name: Start Backend Service
+  ansible.builtin.service:
+    name: backend
+    state: started
+  tags:
+    - backend_service
+
+- name: Enable Backend Service
+  ansible.builtin.service:
+    name: backend
+    enabled: true
+  tags:
+    - backend_service

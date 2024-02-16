@@ -1,0 +1,35 @@
+---
+- name: Install Web Server Packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nginx
+    - git
+  tags:
+    - web_packages
+
+- name: Add Proxy Configuration to Nginx
+  ansible.builtin.lineinfile:
+    path: /etc/nginx/sites-available/default
+    line: "location /json {proxy_pass http://{{ be_dns }}:5000;}"
+    insertafter: "server_name _;"
+  notify:
+    - Restart NGINX
+  tags:
+    - web_configuration
+
+- name: Git Clone Repo
+  ansible.builtin.git:
+    repo: https://github.com/timoguic/acit4640-py-mysql.git
+    dest: /home/ubuntu/repo
+    update: true
+    version: master
+  tags:
+    - web_files
+
+- name: Copy Index to Web Root
+  ansible.builtin.shell:
+    cmd: "cp -r /home/ubuntu/repo/frontend/index.html /var/www/html/"
+  tags:
+    - web_files
